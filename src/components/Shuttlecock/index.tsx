@@ -9,7 +9,7 @@ import {
     SwingInterval,
     Position,
     ServicePositions,
-    BirdieSize
+    Stage
 } from "./constants";
 import Avatar from "./Avatar";
 import Opponent from "./Opponent";
@@ -18,7 +18,6 @@ import ServiceLine from "./ServiceLine";
 import CenterLine from "./CenterLine";
 import Net from "./Net";
 import Birdie from "./Birdie";
-
 
 // bezier for making a clear
 function clearHeightBezier(t: number) {
@@ -42,6 +41,8 @@ export const Shuttlecock = () => {
     const [mousePosition, setMousePosition] = useState<Position>({x: CourtDimensions.width*3/4, y: CourtDimensions.height/2});
 
     const [birdieSize, setBirdieSize] = useState(1);
+    const [birdieStage, setBirdieStage] = useState(Stage.Middle);
+    const [birdieAngle, setBirdieAngle] = useState(180);
     const [birdiePosition, setBirdiePosition] = useState<Position>(ServicePositions[0].player);
     const [birdieDestination, setBirdieDestination] = useState<Position>(birdiePosition);
 
@@ -243,6 +244,13 @@ export const Shuttlecock = () => {
             const origin = { ...birdiePosition };
             const destination = { ...birdieDestination };
             const distanceToDestination = Math.sqrt(Math.pow(destination.x - origin.x, 2) + Math.pow(destination.y - origin.y, 2));
+
+            // get slope
+            const m = (destination.y - origin.y) / (destination.x - origin.x);
+
+            // set angle in degrees
+            const angle = Math.atan(m);
+            setBirdieAngle((destination.x > origin.x ? angle : angle+Math.PI) *180/Math.PI);
             
             const timer = setInterval(() => {
                 // set new position
@@ -253,13 +261,15 @@ export const Shuttlecock = () => {
                     }
                     // given origin, determine how far along it is from it's origin
                     const distanceLeft = Math.sqrt(Math.pow(destination.x - x, 2) + Math.pow(destination.y - y, 2));
-
+                    
+                    const t = (distanceToDestination-distanceLeft)/distanceToDestination;
                     // based on length along, use bezier to determine size
-                    setBirdieSize(clearHeightBezier((distanceToDestination-distanceLeft)/distanceToDestination));
+                    setBirdieSize(clearHeightBezier(t));
+
+                    // set the birdie appearance
+                    setBirdieStage(t > 0.9 ? Stage.Down : t > 0.6 ? Stage.Middle : t > 0.2 ? Stage.Rise : Stage.Up);
 
                     const displacement = BirdieProperties.displacement*clearSpeedBezier((distanceToDestination-distanceLeft)/distanceToDestination)
-                    // get slope
-                    const m = (destination.y - y) / (destination.x - x);
 
                     return {
                         x: destination.x > x ? Math.min(x + displacement, destination.x) : Math.max(x - displacement, destination.x),
@@ -290,7 +300,7 @@ export const Shuttlecock = () => {
             <div id="court" ref={courtRef} style={{...CourtDimensions, border: "solid", borderWidth: CourtDimensions.lineWidth, borderColor: "#FFF", position: "relative", top: (CourtDimensions.spaceToWall) - (CourtDimensions.lineWidth/2), left: (CourtDimensions.spaceToWall) - (CourtDimensions.lineWidth/2), cursor: "none"}}>
                 <Avatar x={playerPosition.x} y={playerPosition.y} />
                 <Opponent x={opponentPosition.x} y={opponentPosition.y} />
-                <Birdie x={birdiePosition.x} y={birdiePosition.y} size={birdieSize}  />
+                <Birdie x={birdiePosition.x} y={birdiePosition.y} size={birdieSize} angle={birdieAngle} stage={birdieStage} />
                 <Crosshair x={mousePosition.x} y={mousePosition.y} />
                 <CenterLine />
                 <ServiceLine />

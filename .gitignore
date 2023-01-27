@@ -8,6 +8,10 @@
 # testing
 /coverage
 
+# lockfile
+package-lock.json
+yarn.lock
+
 # production
 /build
 
