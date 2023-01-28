@@ -2,7 +2,7 @@ import { ReactComponent as BirdieBack } from "../../assets/birdie-back.svg";
 import { ReactComponent as BirdieTop } from "../../assets/birdie-top.svg";
 import { ReactComponent as BirdieSide } from "../../assets/birdie-side.svg";
 import { ReactComponent as BirdieQuarter } from "../../assets/birdie-quarter.svg";
-
+import { ReactComponent as Birdie3Quarter } from "../../assets/birdie-3-quarter.svg";
 // Court dimensions: (i am using a conversion of 32px/ft)
 // from post to service line: 6.5 ft (182px)
 // full court length: 44 ft (1232px)
@@ -28,7 +28,7 @@ export const SwingInterval = 300;
 
 export const PlayerProperties = {
     // number of pixels to move every interval
-    displacement: 20,
+    displacement: 25,
     // number of milliseconds between next displacement
     interval: 12,
     swingRange: 200
@@ -42,7 +42,7 @@ export const BirdieProperties = {
 export const OpponentProperties = {
     // reaction time in milliseconds
     reactionTime: 100,
-    displacement: 8,
+    displacement: 9,
     interval: 12,
     swingRange: 50
 }
@@ -83,6 +83,7 @@ export enum Stage {
     Up = "up",
     Rise = "rise",
     Middle = "middle",
+    Set = "set",
     Down = "down"
 }
 
@@ -90,5 +91,6 @@ export const BirdieStages = {
     'up': BirdieTop,
     'rise': BirdieQuarter,
     'middle': BirdieSide,
+    'set': Birdie3Quarter,
     'down': BirdieBack
 }

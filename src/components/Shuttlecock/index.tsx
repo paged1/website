@@ -138,11 +138,6 @@ export const Shuttlecock = () => {
                 // then it's within the hit box, so set the destination
                 setBirdieDestination(mousePosition);
             }
-
-            setTimeout(() => {
-
-            }, OpponentProperties.reactionTime);
-
             // don't allow swinging again for the next interval
             const timer = setTimeout(() => setSwing(false), SwingInterval);
             return () => clearTimeout(timer);
@@ -268,6 +263,15 @@ export const Shuttlecock = () => {
                 setBirdiePosition(({ x, y }) => {
                     if (x === destination.x && y === destination.y) {
                         clearInterval(timer!);
+                        if (destination.x === CourtDimensions.width/2) {
+                            console.log('net hit');
+                            // 50/50 chance
+                            const willLandRight = !!Math.round(Math.random());
+                            // land from 25-125 pixels away
+                            const distance = Math.round((Math.random()*100)+25)
+                            // side 
+                            setBirdieDestination({x: x + (willLandRight ? distance : -distance), y: destination.y});
+                        }
                         return { x, y };
                     }
                     // given origin, determine how far along it is from it's origin
@@ -278,7 +282,7 @@ export const Shuttlecock = () => {
                     setBirdieSize(clearHeightBezier(t));
 
                     // set the birdie appearance
-                    setBirdieStage(t > 0.9 ? Stage.Down : t > 0.6 ? Stage.Middle : t > 0.2 ? Stage.Rise : Stage.Up);
+                    setBirdieStage(t > 0.9 ? Stage.Down : t > 0.8 ? Stage.Set : t > 0.6 ? Stage.Middle : t > 0.2 ? Stage.Rise : Stage.Up);
 
                     const displacement = BirdieProperties.displacement*clearSpeedBezier((distanceToDestination-distanceLeft)/distanceToDestination)
 
@@ -311,7 +315,13 @@ export const Shuttlecock = () => {
             <div id="court" ref={courtRef} style={{...CourtDimensions, border: "solid", borderWidth: CourtDimensions.lineWidth, borderColor: "#FFF", position: "relative", top: (CourtDimensions.spaceToWall) - (CourtDimensions.lineWidth/2), left: (CourtDimensions.spaceToWall) - (CourtDimensions.lineWidth/2), cursor: "none"}}>
                 <Avatar x={playerPosition.x} y={playerPosition.y} />
                 <Opponent x={opponentPosition.x} y={opponentPosition.y} />
-                <Birdie x={birdiePosition.x} y={birdiePosition.y} size={birdieSize} angle={birdieAngle} stage={birdieStage} />
+                <Birdie 
+                    x={birdiePosition.x}
+                    y={birdiePosition.y}
+                    size={birdieSize}
+                    angle={birdieAngle}
+                    stage={birdieStage}
+                />
                 <Crosshair x={mousePosition.x} y={mousePosition.y} />
                 <CenterLine />
                 <ServiceLine />

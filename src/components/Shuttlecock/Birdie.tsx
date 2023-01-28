@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, ReactComponentElement } from "react";
+import { useRef } from "react";
 import { BirdieSize, BirdieStages, Stage } from "./constants";
 
 // converted to jsx using: https://svg2jsx.com/
@@ -8,16 +8,6 @@ function Birdie({size = 1, stage = Stage.Middle, angle = 0, x = 0, y = 0}: {size
     const rightRotationOffset = -104;
 
     const birdieRef = useRef(null);
-
-    // const [coordinates, setCoordinates] = useState({x: 0, y: 0})
-
-    // useEffect(() => {
-    //     //console.log('coordinates', x, y);
-    //     setCoordinates({
-    //         x,
-    //         y
-    //     });
-    // }, [x, y]);
 
     const BirdieSvg = BirdieStages[stage];
 
