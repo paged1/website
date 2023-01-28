@@ -130,7 +130,8 @@ export const Shuttlecock = () => {
                 playerPosition.x + PlayerProperties.swingRange >= birdiePosition.x && 
                 playerPosition.x - PlayerProperties.swingRange <= birdiePosition.x && 
                 playerPosition.y + PlayerProperties.swingRange >= birdiePosition.y &&
-                playerPosition.y - PlayerProperties.swingRange <= birdiePosition.y
+                playerPosition.y - PlayerProperties.swingRange <= birdiePosition.y && 
+                birdiePosition.x < CourtDimensions.width/2
             ) {
                 
                 console.log('hit')
@@ -159,6 +160,16 @@ export const Shuttlecock = () => {
                 console.log('opponent moving');
                 // move to birdie location
                 // start a setInterval that will move the opponent
+
+                const origin = { ...opponentPosition };
+                const destination = { ...birdieDestination };
+
+                // get slope
+                const m = (destination.y - origin.y) / (destination.x - origin.x);
+
+                // set angle in degrees
+                const angle = Math.atan(m);
+
                 moveTimer = setInterval(() => {
                     // ok, so move the opponent a little closer to the birdie destination
                     setOpponentPosition(({x, y}) => {
@@ -166,14 +177,13 @@ export const Shuttlecock = () => {
                             clearInterval(moveTimer!);
                             return { x, y };
                         }
-                        const origin = { x, y };
-                        const destination = { ...birdieDestination };
-                        // get slope
-                        const m = (destination.y - origin.y) / (destination.x - origin.x);
+
+                        const displacement = OpponentProperties.displacement;
+                        
                         // set new position
                         return {
-                            x: destination.x >= origin.x ? Math.min(origin.x + OpponentProperties.displacement, destination.x) : Math.max(origin.x - OpponentProperties.displacement, destination.x),
-                            y: destination.y >= origin.y ? Math.min(origin.y + (destination.x < origin.x ? -m : m) * OpponentProperties.displacement, destination.y) : Math.max(origin.y + (destination.x < origin.x ? -m : m) * OpponentProperties.displacement, destination.y)
+                            x: destination.x > x ? Math.min(x + displacement*Math.cos(angle), destination.x) : Math.max(x - displacement*Math.cos(angle), destination.x),
+                            y: destination.y > y ? Math.min(y + (destination.x < x ? -displacement*Math.sin(angle) : displacement*Math.sin(angle)), destination.y) : Math.max(y + (destination.x < x ? -displacement*Math.sin(angle) : displacement*Math.sin(angle)), destination.y)
                         };
                         
                     });
@@ -220,16 +230,17 @@ export const Shuttlecock = () => {
             opponentPosition.x + OpponentProperties.swingRange >= birdiePosition.x && 
             opponentPosition.x - OpponentProperties.swingRange <= birdiePosition.x && 
             opponentPosition.y + OpponentProperties.swingRange >= birdiePosition.y &&
-            opponentPosition.y - OpponentProperties.swingRange <= birdiePosition.y
+            opponentPosition.y - OpponentProperties.swingRange <= birdiePosition.y &&
+            birdiePosition.x > CourtDimensions.width/2
         ) {
             console.log('opponent hit');
 
             // random spot on the other court
             setBirdieDestination({
                 // add spaceToWall to range, then shift afterwards, covering the space from the wall to the net
-                x: Math.round(Math.random() * (CourtDimensions.width/2 + CourtDimensions.spaceToWall)) - CourtDimensions.spaceToWall,
+                x: Math.round((Math.random() * (CourtDimensions.width/2 + CourtDimensions.spaceToWall)) - CourtDimensions.spaceToWall),
                 // shift again, same idea
-                y: Math.round(Math.random() * (CourtDimensions.height + CourtDimensions.spaceToWall*2)) - CourtDimensions.spaceToWall
+                y: Math.round((Math.random() * (CourtDimensions.height + CourtDimensions.spaceToWall*2)) - CourtDimensions.spaceToWall)
             })
         }
 
@@ -251,7 +262,7 @@ export const Shuttlecock = () => {
             // set angle in degrees
             const angle = Math.atan(m);
             setBirdieAngle((destination.x > origin.x ? angle : angle+Math.PI) *180/Math.PI);
-            
+
             const timer = setInterval(() => {
                 // set new position
                 setBirdiePosition(({ x, y }) => {
@@ -272,8 +283,8 @@ export const Shuttlecock = () => {
                     const displacement = BirdieProperties.displacement*clearSpeedBezier((distanceToDestination-distanceLeft)/distanceToDestination)
 
                     return {
-                        x: destination.x > x ? Math.min(x + displacement, destination.x) : Math.max(x - displacement, destination.x),
-                        y: destination.y > y ? Math.min(y + (destination.x < x ? -m : m) * displacement, destination.y) : Math.max(y + (destination.x < x ? -m : m) * displacement, destination.y)
+                        x: destination.x > x ? Math.min(x + displacement*Math.cos(angle), destination.x) : Math.max(x - displacement*Math.cos(angle), destination.x),
+                        y: destination.y > y ? Math.min(y + (destination.x < x ? -displacement*Math.sin(angle) : displacement*Math.sin(angle)), destination.y) : Math.max(y + (destination.x < x ? -displacement*Math.sin(angle) : displacement*Math.sin(angle)), destination.y)
                     }
                 });
             }, BirdieProperties.interval);
