@@ -18,6 +18,8 @@ export const CourtDimensions = {
 
 export const FloorColor = "#ee9f27";
 
+export const ScoreToWin = 11;
+
 // avatar size in pixels
 export const AvatarSize = 104;
 export const BirdieSize = 32;
@@ -41,7 +43,7 @@ export const BirdieProperties = {
 
 export const OpponentProperties = {
     // reaction time in milliseconds
-    reactionTime: 100,
+    reactionTime: 200,
     displacement: 9,
     interval: 12,
     swingRange: 50

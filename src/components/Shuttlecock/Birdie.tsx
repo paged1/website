@@ -3,7 +3,7 @@ import { BirdieSize, BirdieStages, Stage } from "./constants";
 
 // converted to jsx using: https://svg2jsx.com/
 
-function Birdie({size = 1, stage = Stage.Middle, angle = 0, x = 0, y = 0}: {size?: number, stage: Stage, angle?: number, x?: number, y?: number}) {
+function Birdie({size, stage, angle, x, y}: {size: number, stage: Stage, angle: number, x: number, y: number}) {
     // default angle to point the birdie directly down
     const rightRotationOffset = -104;
 
