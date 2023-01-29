@@ -13,7 +13,7 @@ import {
     ScoreToWin,
     MessageTime
 } from "./constants";
-import Avatar from "./Avatar";
+import Avatar from "./Avatar"
 import Opponent from "./Opponent";
 import Crosshair from "./Crosshair";
 import ServiceLine from "./ServiceLine";
@@ -131,14 +131,10 @@ export const Shuttlecock = () => {
         }
 
         if (gameState.stage === 'dead') {
-            if (gameState.stage === 'dead') {
-                // check what the deal was
-                setGameMessage(gameState.server === 'player' ? "Point Player" : "Point Opponent");
-                const timer = setTimeout(() => {
-                    setGameState((state) => ({...state, stage: 'service'}));
-                }, MessageTime);
-                return () => clearTimeout(timer);
-            }
+            const timer = setTimeout(() => {
+                setGameState((state) => ({...state, stage: 'service'}));
+            }, MessageTime);
+            return () => clearTimeout(timer);
         }
         else if (gameState.stage === 'service') {
             const result = gameWinner(gameState.scores.player, gameState.scores.opponent);
@@ -191,7 +187,8 @@ export const Shuttlecock = () => {
                     // y axis: get service to see which side it should be in on (even, then odd)
                     (isService ? (gameState.scores.player % 2 === 0) ? (y >= 0 && y <= CourtDimensions.height/2) : (y >= CourtDimensions.height/2 && y <= CourtDimensions.height) : (y >= 0 && y <= CourtDimensions.height))
                 ) {
-                    console.log('point awarded from in: player')
+                    console.log('point awarded from in: player');
+                    setGameMessage("Point Player");
                     // in, award point to player
                     setGameState((state) => ({
                         ...state,
@@ -205,6 +202,7 @@ export const Shuttlecock = () => {
                 }
                 else {
                     console.log('point awarded from out: opponent')
+                    setGameMessage(x > CourtDimensions.width ? "Long" : (isService ? (gameState.scores.player % 2 === 0) ? (y < 0 || y > CourtDimensions.height/2) : (y < CourtDimensions.height/2 || y > CourtDimensions.height) : (y < 0 || y > CourtDimensions.height)) ? "Wide" : "Short");
                     // out, award point to opponent
                     setGameState((state) => ({
                         ...state,
@@ -226,6 +224,7 @@ export const Shuttlecock = () => {
                     (isService ? (gameState.scores.opponent % 2 === 1) ? (y >= 0 && y <= CourtDimensions.height/2) : (y >= CourtDimensions.height/2 && y <= CourtDimensions.height) : (y >= 0 && y <= CourtDimensions.height))
                 ) {
                     console.log('point awarded from in: opponent')
+                    setGameMessage("Point Opponent");
                     // in, award point to opponent
                     setGameState((state) => ({
                         ...state,
@@ -238,7 +237,8 @@ export const Shuttlecock = () => {
                     }));
                 }
                 else {
-                    console.log('point awarded from out: player')
+                    console.log('point awarded from out: player');
+                    setGameMessage(x < 0 ? "Long" : (isService ? (gameState.scores.opponent % 2 === 1) ? (y < 0 || y > CourtDimensions.height/2) : (y < CourtDimensions.height/2 || y > CourtDimensions.height) : (y < 0 || y > CourtDimensions.height)) ? "Wide" : "Short");
                     // out, award point to player
                     setGameState((state) => ({
                         ...state,
@@ -448,11 +448,30 @@ export const Shuttlecock = () => {
                 const timer = setTimeout(() => {
                     // random spot on the other court
                     console.log('opponent serve');
+
+                    let x;
+                    const isShort = Math.random() >= 0.95;
+                    if (isShort) {
+                        // put in first 120px of service line
+                        x = CourtDimensions.width/2 - CourtDimensions.service - (Math.round(Math.random()*120))
+                    }
+                    else {
+                        // put in back 150px of court, with 10% chance of going out
+                        x = Math.round(Math.random()*120) - 12;
+                    }
+                    
+                    let y;
+                    if (gameState.scores.opponent % 2 === 1) {
+                        // odd, upper half
+                        y = Math.round(Math.random()*(CourtDimensions.height/2 + CourtDimensions.spaceToWall) - CourtDimensions.spaceToWall/2)
+                    } 
+                    else {
+                        // even
+                        y = Math.round(CourtDimensions.height/2 + Math.random()*(CourtDimensions.height/2 + CourtDimensions.spaceToWall) - CourtDimensions.spaceToWall/2)
+                    }
                     setBirdieDestination({
-                        // add spaceToWall to range, then shift afterwards, covering the space from the wall to the net
-                        x: Math.round((Math.random() * (CourtDimensions.width/2 + CourtDimensions.spaceToWall)) - CourtDimensions.spaceToWall),
-                        // shift again, same idea
-                        y: Math.round((Math.random() * (CourtDimensions.height + CourtDimensions.spaceToWall*2)) - CourtDimensions.spaceToWall)
+                        x,
+                        y
                     });
                     setGameState((state) => ({...state, stage: 'rally', hits: {...state.hits, opponent: state.hits.opponent + 1}}));
                 }, 3_000);

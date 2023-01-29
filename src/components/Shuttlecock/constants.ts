@@ -47,7 +47,7 @@ export const BirdieProperties = {
 export const OpponentProperties = {
     // reaction time in milliseconds
     reactionTime: 100,
-    displacement: 20,
+    displacement: 15,
     interval: 12,
     swingRange: 50
 }
