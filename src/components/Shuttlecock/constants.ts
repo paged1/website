@@ -20,6 +20,9 @@ export const FloorColor = "#ee9f27";
 
 export const ScoreToWin = 11;
 
+// amount of milliseconds to show messages
+export const MessageTime = 1_500;
+
 // avatar size in pixels
 export const AvatarSize = 104;
 export const BirdieSize = 32;
@@ -43,8 +46,8 @@ export const BirdieProperties = {
 
 export const OpponentProperties = {
     // reaction time in milliseconds
-    reactionTime: 200,
-    displacement: 9,
+    reactionTime: 100,
+    displacement: 20,
     interval: 12,
     swingRange: 50
 }

@@ -10,7 +10,8 @@ import {
     Position,
     ServicePositions,
     Stage,
-    ScoreToWin
+    ScoreToWin,
+    MessageTime
 } from "./constants";
 import Avatar from "./Avatar";
 import Opponent from "./Opponent";
@@ -42,7 +43,7 @@ type GameState = {
         'opponent': number;
     };
     server: 'player' | 'opponent',
-    stage: 'service' | 'rally' | 'over'
+    stage: 'service' | 'rally' | 'dead' | 'over'
     paused: boolean;
 }
 
@@ -94,7 +95,7 @@ export const Shuttlecock = () => {
         if (gameMessage && gameState.stage !== 'rally') {
             const timer = setTimeout(() => {
                 setGameMessage("");
-            }, 3_000);
+            }, MessageTime);
             return () => clearTimeout(timer);
         }
         else {
@@ -129,26 +130,34 @@ export const Shuttlecock = () => {
             }
         }
 
-        const result = gameWinner(gameState.scores.player, gameState.scores.opponent);
-        console.log('score', gameState.scores, result);
-        if (result === 'player') {
-            setGameMessage("You Won");
-            setGameState((state) => ({...state, stage: 'over'}));
+        if (gameState.stage === 'dead') {
+            if (gameState.stage === 'dead') {
+                // check what the deal was
+                setGameMessage(gameState.server === 'player' ? "Point Player" : "Point Opponent");
+                const timer = setTimeout(() => {
+                    setGameState((state) => ({...state, stage: 'service'}));
+                }, MessageTime);
+                return () => clearTimeout(timer);
+            }
         }
-        else if (result === 'opponent') {
-            setGameMessage("You Lost");
-            setGameState((state) => ({...state, stage: 'over'}));
-        }
-        else {
-            // game not over, prep for service
-            service();
+        else if (gameState.stage === 'service') {
+            const result = gameWinner(gameState.scores.player, gameState.scores.opponent);
+            console.log('score', gameState.scores, result);
+            if (result === 'player') {
+                setGameMessage("You Won");
+                setGameState((state) => ({...state, stage: 'over'}));
+            }
+            else if (result === 'opponent') {
+                setGameMessage("You Lost");
+                setGameState((state) => ({...state, stage: 'over'}));
+            }
+            else {
+                // game not over, prep for service
+                service();
+            }
         }
 
-    }, [gameState.scores]);
-
-    useEffect(() => {
-        // detect faults (double hit)
-    }, [gameState.hits]);
+    }, [gameState.stage]);
 
     useEffect(() => {
         if (
@@ -186,6 +195,7 @@ export const Shuttlecock = () => {
                     // in, award point to player
                     setGameState((state) => ({
                         ...state,
+                        stage: 'dead',
                         scores: {
                             player: state.scores.player + 1,
                             opponent: state.scores.opponent
@@ -198,6 +208,7 @@ export const Shuttlecock = () => {
                     // out, award point to opponent
                     setGameState((state) => ({
                         ...state,
+                        stage: 'dead',
                         scores: {
                             player: state.scores.player,
                             opponent: state.scores.opponent + 1
@@ -218,6 +229,7 @@ export const Shuttlecock = () => {
                     // in, award point to opponent
                     setGameState((state) => ({
                         ...state,
+                        stage: 'dead',
                         scores: {
                             player: state.scores.player,
                             opponent: state.scores.opponent + 1
@@ -230,6 +242,7 @@ export const Shuttlecock = () => {
                     // out, award point to player
                     setGameState((state) => ({
                         ...state,
+                        stage: 'dead',
                         scores: {
                             player: state.scores.player + 1,
                             opponent: state.scores.opponent
@@ -324,7 +337,8 @@ export const Shuttlecock = () => {
                 playerPosition.x - PlayerProperties.swingRange <= birdiePosition.x && 
                 playerPosition.y + PlayerProperties.swingRange >= birdiePosition.y &&
                 playerPosition.y - PlayerProperties.swingRange <= birdiePosition.y && 
-                birdiePosition.x < CourtDimensions.width/2
+                birdiePosition.x < CourtDimensions.width/2 &&
+                (gameState.stage === 'service' || gameState.stage === 'rally')
             ) {
                 console.log('hit')
                 // then it's within the hit box, so set the destination
