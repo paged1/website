@@ -40,7 +40,7 @@ export const PlayerProperties = {
 };
 
 export const BirdieProperties = {
-    displacement: 2,
+    displacement: 15,
     interval: 12,
 }
 
@@ -49,7 +49,7 @@ export const OpponentProperties = {
     reactionTime: 100,
     displacement: 15,
     interval: 12,
-    swingRange: 50
+    swingRange: 100
 }
 
 

@@ -29,7 +29,7 @@ function clearHeightBezier(t: number) {
 
 // returns speed factor based on t in range [0,1]
 function clearSpeedBezier(t: number) {
-    const points: Position[] = [{x: 0, y: 7}, {x: 5, y: 7}, {x: 5, y: 7}, {x: 5, y: 2}];
+    const points: Position[] = [{x: 0, y: 2}, {x: 5, y: 1.2}, {x: 5, y: 0.5}, {x: 5, y: 0.1}];
     return Math.pow(1-t, 3)*points[0].y + 3*Math.pow(1-t, 2)*t*points[1].y + 3*(1-t)*Math.pow(t, 2)*points[2].y + Math.pow(t, 3)*points[3].y
 }
 
@@ -87,7 +87,8 @@ export const Shuttlecock = () => {
     const [birdiePosition, setBirdiePosition] = useState<Position>(ServicePositions[0].player);
     const [birdieDestination, setBirdieDestination] = useState<Position>(birdiePosition);
 
-    const [swing, setSwing] = useState(false);
+    const [playerSwing, setPlayerSwing] = useState(false);
+    const [opponentSwing, setOpponentSwing] = useState(false);
 
     const [gameMessage, setGameMessage] = useState<string>("");
 
@@ -138,7 +139,6 @@ export const Shuttlecock = () => {
         }
         else if (gameState.stage === 'service') {
             const result = gameWinner(gameState.scores.player, gameState.scores.opponent);
-            console.log('score', gameState.scores, result);
             if (result === 'player') {
                 setGameMessage("You Won");
                 setGameState((state) => ({...state, stage: 'over'}));
@@ -177,7 +177,6 @@ export const Shuttlecock = () => {
             // if out award to person with less hits
             // if in award to person with more hits
 
-            console.log('landed: last hitter => ', lastHitter, isService, x, x >= (CourtDimensions.width/2 + (isService ? CourtDimensions.service : 0)));
             // increment score and set the server of the next play
             if (lastHitter === 'player') {
                 if (
@@ -187,7 +186,6 @@ export const Shuttlecock = () => {
                     // y axis: get service to see which side it should be in on (even, then odd)
                     (isService ? (gameState.scores.player % 2 === 0) ? (y >= 0 && y <= CourtDimensions.height/2) : (y >= CourtDimensions.height/2 && y <= CourtDimensions.height) : (y >= 0 && y <= CourtDimensions.height))
                 ) {
-                    console.log('point awarded from in: player');
                     setGameMessage("Point Player");
                     // in, award point to player
                     setGameState((state) => ({
@@ -201,7 +199,6 @@ export const Shuttlecock = () => {
                     }));
                 }
                 else {
-                    console.log('point awarded from out: opponent')
                     setGameMessage(x > CourtDimensions.width ? "Long" : (isService ? (gameState.scores.player % 2 === 0) ? (y < 0 || y > CourtDimensions.height/2) : (y < CourtDimensions.height/2 || y > CourtDimensions.height) : (y < 0 || y > CourtDimensions.height)) ? "Wide" : "Short");
                     // out, award point to opponent
                     setGameState((state) => ({
@@ -223,7 +220,6 @@ export const Shuttlecock = () => {
                     // y axis: get service to see which side it should be in on (odd, then even)
                     (isService ? (gameState.scores.opponent % 2 === 1) ? (y >= 0 && y <= CourtDimensions.height/2) : (y >= CourtDimensions.height/2 && y <= CourtDimensions.height) : (y >= 0 && y <= CourtDimensions.height))
                 ) {
-                    console.log('point awarded from in: opponent')
                     setGameMessage("Point Opponent");
                     // in, award point to opponent
                     setGameState((state) => ({
@@ -237,7 +233,6 @@ export const Shuttlecock = () => {
                     }));
                 }
                 else {
-                    console.log('point awarded from out: player');
                     setGameMessage(x < 0 ? "Long" : (isService ? (gameState.scores.opponent % 2 === 1) ? (y < 0 || y > CourtDimensions.height/2) : (y < CourtDimensions.height/2 || y > CourtDimensions.height) : (y < 0 || y > CourtDimensions.height)) ? "Wide" : "Short");
                     // out, award point to player
                     setGameState((state) => ({
@@ -322,12 +317,12 @@ export const Shuttlecock = () => {
     }
 
     const clickHandler = () => {
-        setSwing(true);
+        setPlayerSwing(true);
     }
 
     useEffect(() => {
-        if (swing) {
-            console.log('swing', playerPosition, mousePosition, birdiePosition);
+        if (playerSwing) {
+            console.log('player swing', playerPosition, mousePosition, birdiePosition);
 
             // if swing is good, then send the birdie on it's path (start a timer, which will update the birdie's position, 
             // until hit by something else, or it hits the ground, or service is called)
@@ -340,16 +335,16 @@ export const Shuttlecock = () => {
                 birdiePosition.x < CourtDimensions.width/2 &&
                 (gameState.stage === 'service' || gameState.stage === 'rally')
             ) {
-                console.log('hit')
+                console.log('player hit')
                 // then it's within the hit box, so set the destination
                 setBirdieDestination(mousePosition);
                 setGameState((state) => ({...state, stage: 'rally', hits: {...state.hits, player: state.hits.player + 1}}));
             }
             // don't allow swinging again for the next interval
-            const timer = setTimeout(() => setSwing(false), SwingInterval);
+            const timer = setTimeout(() => setPlayerSwing(false), SwingInterval);
             return () => clearTimeout(timer);
         }
-    }, [swing]);
+    }, [playerSwing]);
 
 
     // opponent move
@@ -396,28 +391,37 @@ export const Shuttlecock = () => {
 
             }, OpponentProperties.reactionTime);
         }
-        // TODO opponent adjusting back to center court
-        // else {
-        //     // move the opponent to the center of the opponents side
-        //     // start a setInterval that will move the opponent
-        //     moveTimer = setInterval(() => {
-        //         // TODO need to rethink this bc we can't exactly find out if we're already there unless we use the opponent position, 
-        //         setOpponentPosition(({x, y}) => {
+        else {
+            const origin = { ...opponentPosition };
+            const destination = { x: Math.round(CourtDimensions.width*7/8), y: CourtDimensions.height/2 };
 
-        //             const origin = { x, y };
-        //             const destination = { x: Math.round(CourtDimensions.width*7/8), y: CourtDimensions.height/2 };
+            // get slope
+            const m = (destination.y - origin.y) / (destination.x - origin.x);
 
-        //             // get slope
-        //             const m = (destination.y - origin.y) / (destination.x - origin.x);
-        //             // set new position
-        //             return {
-        //                 x: Math.min(origin.x + (destination.x > origin.x ? OpponentProperties.displacement : -OpponentProperties.displacement), destination.x),
-        //                 y: destination.y > origin.y ? Math.min(origin.y + Math.round(m * OpponentProperties.displacement), destination.y) : Math.max(origin.y + Math.round(m * OpponentProperties.displacement), destination.y) 
-        //             };
-        //         });
-        //     }, OpponentProperties.interval);
+            // set angle in degrees
+            const angle = Math.atan(m);
+
+            // move the opponent to the center of the opponents side
+            // start a setInterval that will move the opponent
+            moveTimer = setInterval(() => {
+                setOpponentPosition(({x, y}) => {
+                    if (x === destination.x && y === destination.y) {
+                        clearInterval(moveTimer!);
+                        return { x, y };
+                    }
+
+                    // half speed
+                    const displacement = OpponentProperties.displacement/2;
+
+                    // set new position
+                    return {
+                        x: destination.x > x ? Math.min(x + displacement*Math.cos(angle), destination.x) : Math.max(x - displacement*Math.cos(angle), destination.x),
+                        y: destination.y > y ? Math.min(y + (destination.x < x ? -displacement*Math.sin(angle) : displacement*Math.sin(angle)), destination.y) : Math.max(y + (destination.x < x ? -displacement*Math.sin(angle) : displacement*Math.sin(angle)), destination.y)
+                    };
+                });
+            }, OpponentProperties.interval);
             
-        // }
+        }
         return () => {
             if (reactionTimer) {
                 clearTimeout(reactionTimer);
@@ -459,7 +463,7 @@ export const Shuttlecock = () => {
                         // put in back 150px of court, with 10% chance of going out
                         x = Math.round(Math.random()*120) - 12;
                     }
-                    
+
                     let y;
                     if (gameState.scores.opponent % 2 === 1) {
                         // odd, upper half
@@ -477,20 +481,71 @@ export const Shuttlecock = () => {
                 }, 3_000);
                 return  () => clearTimeout(timer);
             }
-            else {
-                console.log('opponent hit', gameState.hits);
-                // random spot on the other court
-                setBirdieDestination({
-                    // add spaceToWall to range, then shift afterwards, covering the space from the wall to the net
-                    x: Math.round((Math.random() * (CourtDimensions.width/2 + CourtDimensions.spaceToWall)) - CourtDimensions.spaceToWall),
-                    // shift again, same idea
-                    y: Math.round((Math.random() * (CourtDimensions.height + CourtDimensions.spaceToWall*2)) - CourtDimensions.spaceToWall)
-                });
-                setGameState((state) => ({...state, stage: 'rally', hits: {...state.hits, opponent: state.hits.opponent + 1}}));
+            else if (gameState.stage === 'rally') {
+                setOpponentSwing(true);
             }
         }
-    }, [opponentPosition, birdiePosition, gameState.hits, gameState.stage]);
+    }, [opponentPosition, birdiePosition, birdieDestination, gameState.hits, gameState.stage]);
 
+    useEffect(() => {
+        if (opponentSwing) {
+            console.log('opponent swing', opponentPosition, mousePosition, birdieDestination);
+
+            const { x, y } = { ...birdieDestination };
+            const isService = gameState.hits.player + gameState.hits.opponent < 2;
+
+            let willHit = false;
+
+            // if birdie is going in
+            if (
+                x >= (CourtDimensions.width/2 + (isService ? CourtDimensions.service : 0)) &&
+                x <= CourtDimensions.width &&
+                (isService ? (gameState.scores.player % 2 === 0) ? (y >= 0 && y <= CourtDimensions.height/2) : (y >= CourtDimensions.height/2 && y <= CourtDimensions.height) : (y >= 0 && y <= CourtDimensions.height))
+            ) {
+                
+                // 10% chance of wrongly thinking the birdie is going out if it's going to land near but inside the line, but never for shortness
+                if (
+                    x > CourtDimensions.width - CourtDimensions.spaceToWall || 
+                    (isService ? (gameState.scores.player % 2 === 0) ? (y < CourtDimensions.spaceToWall/2 || y > CourtDimensions.height/2 - CourtDimensions.spaceToWall/2) : (y < CourtDimensions.height/2 + CourtDimensions.spaceToWall/2 || y > CourtDimensions.height - CourtDimensions.spaceToWall/2) : (y < CourtDimensions.spaceToWall/2 || y > CourtDimensions.height - CourtDimensions.spaceToWall/2))
+                ) {
+                    // birdie is near boundary, 10% chance of not hitting
+                    let chance = Math.random();
+                    if (chance < 0.9) {
+                        willHit = true;
+                    }
+                }
+                else {
+                    willHit = true;
+                }
+            }
+            else {
+                let chance = Math.random();
+                // 10% chance of hitting even if it's going out
+                if (chance >= 0.9) {
+                    willHit = true;
+                }
+            }
+            if (willHit) {
+                setOpponentSwing(true);
+                // 5% chance of missing the swing
+                let chance = Math.random();
+                if (chance < 0.95) {
+                    console.log('opponent hit', gameState.hits);
+                    // random spot on the other court
+                    setBirdieDestination({
+                        // add spaceToWall to range, then shift afterwards, covering the space from the wall to the net
+                        x: Math.round((Math.random() * (CourtDimensions.width/2 + CourtDimensions.spaceToWall)) - CourtDimensions.spaceToWall),
+                        // shift again, same idea
+                        y: Math.round((Math.random() * (CourtDimensions.height + CourtDimensions.spaceToWall*2)) - CourtDimensions.spaceToWall)
+                    });
+                    setGameState((state) => ({...state, hits: {...state.hits, opponent: state.hits.opponent + 1}}));
+                }
+            }
+            // don't allow swinging again for the next interval
+            const timer = setTimeout(() => setOpponentSwing(false), SwingInterval);
+            return () => clearTimeout(timer);
+        }
+    }, [opponentSwing]);
 
     useEffect(() => {
         if (gameState.stage !== 'rally') {
