@@ -16,8 +16,8 @@ function Birdie({size, stage, angle, x, y}: {size: number, stage: Stage, angle: 
         <BirdieSvg
             width={size*BirdieSize}
             height={size*BirdieSize}
-            style={{transformOrigin: 'left'}}
-            transform={`translate(${x - size/2},${y - size/2}) rotate(${rightRotationOffset + angle})`}
+            style={{position: "absolute"}}
+            transform={`translate(${x - size*BirdieSize/2},${y - size*BirdieSize/2}) rotate(${rightRotationOffset + angle})`}
             ref={birdieRef}
         />
     </div>

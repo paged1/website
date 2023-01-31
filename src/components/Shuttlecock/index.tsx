@@ -11,7 +11,8 @@ import {
     ServicePositions,
     Stage,
     ScoreToWin,
-    MessageTime
+    MessageTime,
+    BirdieTooHigh
 } from "./constants";
 import Avatar from "./Avatar"
 import Opponent from "./Opponent";
@@ -91,6 +92,7 @@ export const Shuttlecock = () => {
     const [opponentSwing, setOpponentSwing] = useState(false);
 
     const [gameMessage, setGameMessage] = useState<string>("");
+    const [opponentMessage, setOpponentMessage] = useState("");
 
     useEffect(() => {
         if (gameMessage && gameState.stage !== 'rally') {
@@ -104,6 +106,19 @@ export const Shuttlecock = () => {
         }
         
     }, [gameMessage, gameState.stage]);
+
+    useEffect(() => {
+        if (opponentMessage && gameState.stage !== 'rally') {
+            const timer = setTimeout(() => {
+                setOpponentMessage("");
+            }, MessageTime*3/2);
+            return () => clearTimeout(timer);
+        }
+        else {
+            setOpponentMessage("");
+        }
+        
+    }, [opponentMessage, gameState.stage]);
 
     useEffect(() => {
 
@@ -187,7 +202,9 @@ export const Shuttlecock = () => {
                     (isService ? (gameState.scores.player % 2 === 0) ? (y >= 0 && y <= CourtDimensions.height/2) : (y >= CourtDimensions.height/2 && y <= CourtDimensions.height) : (y >= 0 && y <= CourtDimensions.height))
                 ) {
                     setGameMessage("Point Player");
+                    const exclamations = ["Gah!", "Nice shot!", "@#$%&!", ""];
                     // in, award point to player
+                    setOpponentMessage(exclamations[Math.round(Math.random()*exclamations.length-1)]);
                     setGameState((state) => ({
                         ...state,
                         stage: 'dead',
@@ -200,7 +217,10 @@ export const Shuttlecock = () => {
                 }
                 else {
                     setGameMessage(x > CourtDimensions.width ? "Long" : (isService ? (gameState.scores.player % 2 === 0) ? (y < 0 || y > CourtDimensions.height/2) : (y < CourtDimensions.height/2 || y > CourtDimensions.height) : (y < 0 || y > CourtDimensions.height)) ? "Wide" : "Short");
+                    const exclamations = ["Yes!", "Let's go!", "Nice try!", ""];
                     // out, award point to opponent
+                    // on the board or game bird possibility
+                    setOpponentMessage(exclamations[Math.round(Math.random()*exclamations.length-1)]);
                     setGameState((state) => ({
                         ...state,
                         stage: 'dead',
@@ -221,7 +241,10 @@ export const Shuttlecock = () => {
                     (isService ? (gameState.scores.opponent % 2 === 1) ? (y >= 0 && y <= CourtDimensions.height/2) : (y >= CourtDimensions.height/2 && y <= CourtDimensions.height) : (y >= 0 && y <= CourtDimensions.height))
                 ) {
                     setGameMessage("Point Opponent");
+                    const exclamations = ["Yes!", "Let's go!", "Haha!", ""];
                     // in, award point to opponent
+                    // on the board or game bird possibility
+                    setOpponentMessage(exclamations[Math.round(Math.random()*exclamations.length-1)]);
                     setGameState((state) => ({
                         ...state,
                         stage: 'dead',
@@ -234,7 +257,9 @@ export const Shuttlecock = () => {
                 }
                 else {
                     setGameMessage(x < 0 ? "Long" : (isService ? (gameState.scores.opponent % 2 === 1) ? (y < 0 || y > CourtDimensions.height/2) : (y < CourtDimensions.height/2 || y > CourtDimensions.height) : (y < 0 || y > CourtDimensions.height)) ? "Wide" : "Short");
+                    const exclamations = ["Good eye!", "No!", "So close!", ""];
                     // out, award point to player
+                    setOpponentMessage(exclamations[Math.round(Math.random()*exclamations.length-1)]);
                     setGameState((state) => ({
                         ...state,
                         stage: 'dead',
@@ -333,7 +358,8 @@ export const Shuttlecock = () => {
                 playerPosition.y + PlayerProperties.swingRange >= birdiePosition.y &&
                 playerPosition.y - PlayerProperties.swingRange <= birdiePosition.y && 
                 birdiePosition.x < CourtDimensions.width/2 &&
-                (gameState.stage === 'service' || gameState.stage === 'rally')
+                (gameState.stage === 'service' || gameState.stage === 'rally') &&
+                birdieSize <= BirdieTooHigh
             ) {
                 console.log('player hit')
                 // then it's within the hit box, so set the destination
@@ -527,9 +553,9 @@ export const Shuttlecock = () => {
             }
             if (willHit) {
                 setOpponentSwing(true);
-                // 5% chance of missing the swing
+                // 5% chance of missing the swing, or if birdie is too high
                 let chance = Math.random();
-                if (chance < 0.95) {
+                if (chance < 0.95 && birdieSize <= BirdieTooHigh) {
                     console.log('opponent hit', gameState.hits);
                     // random spot on the other court
                     setBirdieDestination({
@@ -623,7 +649,7 @@ export const Shuttlecock = () => {
         <div id="game-container" style={{height: CourtDimensions.height + CourtDimensions.spaceToWall*2 + (CourtDimensions.lineWidth/2), width: CourtDimensions.width + CourtDimensions.spaceToWall*2 + (CourtDimensions.lineWidth/2), border: "solid", borderWidth: CourtDimensions.lineWidth, borderColor: "#000", backgroundColor: FloorColor}}>
             <div id="court" ref={courtRef} style={{...CourtDimensions, border: "solid", borderWidth: CourtDimensions.lineWidth, borderColor: "#FFF", position: "relative", top: (CourtDimensions.spaceToWall) - (CourtDimensions.lineWidth/2), left: (CourtDimensions.spaceToWall) - (CourtDimensions.lineWidth/2), cursor: "none"}}>
                 <Avatar x={playerPosition.x} y={playerPosition.y} />
-                <Opponent x={opponentPosition.x} y={opponentPosition.y} />
+                <Opponent x={opponentPosition.x} y={opponentPosition.y} message={opponentMessage} />
                 <Birdie 
                     x={birdiePosition.x}
                     y={birdiePosition.y}
@@ -639,9 +665,9 @@ export const Shuttlecock = () => {
                     {`${gameState.scores.player}-${gameState.scores.opponent}`}
                 </div>
                 {gameMessage && (
-                    <div style={{width: CourtDimensions.width + CourtDimensions.spaceToWall*2 + CourtDimensions.lineWidth/2, height: CourtDimensions.height/2, position: "absolute", left: -CourtDimensions.spaceToWall-CourtDimensions.lineWidth/2, backgroundColor: "rgba(10, 10, 10, 0.5)", display: "table"}} >
+                    <div style={{width: CourtDimensions.width + CourtDimensions.spaceToWall*2 + CourtDimensions.lineWidth/2, height: CourtDimensions.height/4, position: "absolute", left: -CourtDimensions.spaceToWall-CourtDimensions.lineWidth/2, backgroundColor: "rgba(10, 10, 10, 0.5)", display: "table"}} >
                         <div style={{display: "table-cell", verticalAlign: "middle", textAlign: "center"}}>
-                            <div style={{fontFamily: "'Bebas Neue', cursive", fontSize: CourtDimensions.height/3}}>
+                            <div style={{fontFamily: "'Bebas Neue', cursive", fontSize: CourtDimensions.height/6, textShadow: `2px 2px 2px black`}}>
                                 {gameMessage}
                             </div>
                         </div>

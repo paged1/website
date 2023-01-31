@@ -28,6 +28,9 @@ export const AvatarSize = 104;
 export const BirdieSize = 32;
 export const CrosshairSize = 36;
 
+// size multiplier that is considered too high up to hit
+export const BirdieTooHigh = 3;
+
 // interval between attempted swings
 export const SwingInterval = 300;
 
